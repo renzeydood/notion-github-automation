@@ -7,7 +7,6 @@ on:
       data_source_id: {required: false, type: string, default: ''}
     secrets:
       notion_token: {required: true}
-      automation_repo_token: {required: true}
 permissions:
   contents: write
 jobs:
@@ -19,7 +18,6 @@ jobs:
         with:
           repository: renzeydood/notion-github-automation
           ref: main
-          token: ${{ secrets.automation_repo_token }}
           persist-credentials: false
           path: automation
       - uses: actions/setup-python@v5
