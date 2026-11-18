@@ -18,7 +18,7 @@ class BranchTests(unittest.TestCase):
             {'name': 'bug/MAP-43_another'},
             {'name': 'feature/MAP-420_other'},
         ]):
-            self.assertEqual(module.find_ticket_branches('renzeydood/MapPinList', 'MAP-42'), ['feature/MAP-42_original_title'])
+            self.assertEqual(module.find_ticket_branches('example/example-project', 'MAP-42'), ['feature/MAP-42_original_title'])
 
 if __name__ == '__main__':
     unittest.main()
