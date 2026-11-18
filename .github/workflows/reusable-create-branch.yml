@@ -1,0 +1,36 @@
+name: Reusable - create Notion branch
+on:
+  workflow_call:
+    inputs:
+      page_id: {required: true, type: string}
+      database_id: {required: true, type: string}
+      data_source_id: {required: false, type: string, default: ''}
+    secrets:
+      notion_token: {required: true}
+      automation_repo_token: {required: true}
+permissions:
+  contents: write
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out shared automation code
+        uses: actions/checkout@v4
+        with:
+          repository: renzeydood/notion-github-automation
+          ref: main
+          token: ${{ secrets.automation_repo_token }}
+          persist-credentials: false
+          path: automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create branch and update Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.notion_token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PAGE_ID: ${{ inputs.page_id }}
+          NOTION_DATABASE_ID: ${{ inputs.database_id }}
+          NOTION_DATA_SOURCE_ID: ${{ inputs.data_source_id }}
+        run: python automation/scripts/create_notion_branch.py
