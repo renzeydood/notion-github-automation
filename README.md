@@ -1,8 +1,8 @@
 # Notion ↔ GitHub automation
 
-Shared automation for the private **PokeRogue-SBC** and **MapPinList** GitHub repositories and future Notion Kanban boards.
+Shared automation for GitHub repositories (public or private) and Notion Kanban boards.
 
-**Status:** Shared code and templates are committed, but **neither existing project has been migrated**. Both projects retain their working setup until a pilot test succeeds.
+**Status:** MapPinList has validated the centralized branch and PR lifecycle. PokeRogue-SBC migration is being validated. This repository is being prepared for public visibility.
 
 ## How it works
 
@@ -23,22 +23,22 @@ Shared automation for the private **PokeRogue-SBC** and **MapPinList** GitHub re
 | `templates/create-notion-branch.yml` | Per-project branch workflow caller |
 | `templates/sync-notion-lifecycle.yml` | Per-project lifecycle workflow caller |
 | `cloudflare/worker.js` | Multi-project webhook dispatcher |
-| `templates/projects-config.json` | Existing project registrations |
+| `templates/projects-config.json` | Example registration with placeholder IDs |
 | `tests/test_branch_helpers.py` | Offline branch naming and duplicate-detection smoke tests |
 
-## One-time setup: private shared workflows
+## Shared workflows in a public repository
 
-In **this automation repository**, go to **Settings → Actions → General → Access** and allow repositories owned by `renzeydood` to use its reusable workflows.
+The shared repository must be **public** for a public project repository to call its reusable workflows. Public reusable workflows can be called by public or private projects (subject to their Actions policies). GitHub Actions automatically reads the shared workflow and `actions/checkout` downloads this public repository; **no `AUTOMATION_REPO_TOKEN` is needed**.
 
-Create a **fine-grained personal access token** with **Contents: Read-only**, limited to **this automation repository**. In each project repo, add it as the Actions secret `AUTOMATION_REPO_TOKEN`. This token lets a workflow running in a different private repository check out the shared Python scripts.
+The Cloudflare `GITHUB_TOKEN` is separate and must have **Actions: Read/write** on registered target repositories. The built-in GitHub Actions `GITHUB_TOKEN` writes branches to the calling project. Keep `NOTION_TOKEN` as an Actions secret in each project.
 
-**Do not reuse the Cloudflare PAT for this.** Cloudflare's separate `GITHUB_TOKEN` must have **Actions: Read/write** on all registered project repositories. The GitHub Actions built-in `GITHUB_TOKEN` handles writing branches to the *calling* project.
+The `templates/projects-config.json` file is illustrative. Keep your **real Notion IDs and repo mapping only in Cloudflare's `PROJECTS_CONFIG` variable**, not in this public repository.
 
 ## Migrate one project (MapPinList first)
 
 1. Leave the existing working Python scripts in MapPinList as a rollback option.
 2. In MapPinList, ensure Actions variables `NOTION_DATABASE_ID` and `NOTION_DATA_SOURCE_ID` are set. Keep its existing `NOTION_TOKEN` secret.
-3. Add the new `AUTOMATION_REPO_TOKEN` secret.
+3. No shared-repository PAT is required after this repository becomes public.
 4. **Back up** the existing two workflow YAML files.
 5. Replace `.github/workflows/create-notion-branch.yml` with [the branch caller](templates/create-notion-branch.yml).
 6. Replace `.github/workflows/sync-notion-lifecycle.yml` with [the lifecycle caller](templates/sync-notion-lifecycle.yml).
@@ -68,7 +68,7 @@ The Worker intentionally retains Notion page-fetch API version `2022-06-28`, ind
 2. Ensure properties: `Name` (title), `Ticket ID` (unique ID with prefix), `Phase` (select or relation), `GitHub Lifecycle` (select), `GitHub Link` (URL).
 3. Add a Notion **Create Branch** button that edits **this page** and sets `GitHub Lifecycle = Pending`.
 4. Copy the two YAML templates to `.github/workflows/` in the new GitHub repo.
-5. Set Actions variables `NOTION_DATABASE_ID` and `NOTION_DATA_SOURCE_ID`; secrets `NOTION_TOKEN` and `AUTOMATION_REPO_TOKEN`.
+5. Set Actions variables `NOTION_DATABASE_ID` and `NOTION_DATA_SOURCE_ID`, and the `NOTION_TOKEN` secret.
 6. Add an entry to Cloudflare `PROJECTS_CONFIG`: `{"databaseId":"...","dataSourceId":"...","repo":"owner/name"}`. Optional `workflow` defaults to `create-notion-branch.yml`, `ref` defaults to `main`.
 7. Ensure Cloudflare's `GITHUB_TOKEN` has Actions write access to the new repo. Deploy the variable change and test a ticket.
 
