@@ -139,6 +139,9 @@ def main():
     props = page.get('properties') or {}
     state = (props.get('GitHub Lifecycle', {}).get('select') or {}).get('name')
     current_link = (props.get('GitHub Link', {}) or {}).get('url')
+    current_ticket_status = (props.get('Status', {}).get('status') or {}).get('name')
+    if current_ticket_status is None:
+        current_ticket_status = (props.get('Status', {}).get('select') or {}).get('name')
     LOG.info('Current Notion lifecycle=%s has_link=%s', state, bool(current_link))
     if state == 'Merged' and new_status != 'Merged':
         LOG.info('Already merged; ignoring later event')
@@ -146,10 +149,18 @@ def main():
     if new_status == 'Deleted' and (state == 'PR' or (current_link and '/pull/' in current_link)):
         LOG.info('PR exists; retaining PR lifecycle and link')
         return
-    if state == new_status and (link is None or current_link == link):
+    if state == new_status and (link is None or current_link == link) and not (new_status == 'Merged' and current_ticket_status != 'Done'):
         LOG.info('No change needed')
         return
     update = {'GitHub Lifecycle': {'select': {'name': new_status}}}
+    if new_status == 'Merged' and current_ticket_status != 'Done':
+        status_type = (props.get('Status') or {}).get('type')
+        if status_type == 'status':
+            update['Status'] = {'status': {'name': 'Done'}}
+        elif status_type == 'select':
+            update['Status'] = {'select': {'name': 'Done'}}
+        else:
+            raise RuntimeError('Notion Status property must be status or select to mark ticket Done')
     if link:
         update['GitHub Link'] = {'url': link}
     notion('PATCH', f'/pages/{page_id}', version, {'properties': update})
